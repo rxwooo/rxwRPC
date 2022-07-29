@@ -1,0 +1,10 @@
+*.zip
+*.rar
+*.doc
+*.docx
+*.exe
+*.pptx
+*.ppt
+/test.cpp
+/.vscode
+/temp
