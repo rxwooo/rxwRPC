@@ -61,7 +61,7 @@ call_helper(F f, ArgsTuple args) {
 }
 
 // rpc 类定义
-class buttonrpc
+class rxwRPC
 {
 public:
 	enum rpc_role {
@@ -109,8 +109,8 @@ public:
 		type val_;
 	};
 
-	buttonrpc();
-	~buttonrpc();
+	rxwRPC();
+	~rxwRPC();
 
 	// network
 	void as_client(std::string ip, int port);
@@ -218,16 +218,16 @@ private:
 	int m_role;
 };
 
-inline buttonrpc::buttonrpc() : m_context(1) {
+inline rxwRPC::rxwRPC() : m_context(1) {
 	m_error_code = RPC_ERR_SUCCESS;
 }
 
-inline buttonrpc::~buttonrpc() {
+inline rxwRPC::~rxwRPC() {
 	m_context.close();
 }
 
 // network
-inline void buttonrpc::as_client(std::string ip, int port)
+inline void rxwRPC::as_client(std::string ip, int port)
 {
 	m_role = RPC_CLIENT;
 	m_socket = std::unique_ptr<zmq::socket_t, std::function<void(zmq::socket_t*)>>(new zmq::socket_t(m_context, ZMQ_REQ), [](zmq::socket_t* sock) { sock->close(); delete sock; sock = nullptr; });
@@ -236,7 +236,7 @@ inline void buttonrpc::as_client(std::string ip, int port)
 	m_socket->connect(os.str());
 }
 
-inline void buttonrpc::as_server(int port)
+inline void rxwRPC::as_server(int port)
 {
 	m_role = RPC_SERVER;
 	m_socket = std::unique_ptr<zmq::socket_t, std::function<void(zmq::socket_t*)>>(new zmq::socket_t(m_context, ZMQ_REP), [](zmq::socket_t* sock) { sock->close(); delete sock; sock = nullptr; });
@@ -245,17 +245,17 @@ inline void buttonrpc::as_server(int port)
 	m_socket->bind(os.str());
 }
 
-inline void buttonrpc::send(zmq::message_t& data)
+inline void rxwRPC::send(zmq::message_t& data)
 {
 	m_socket->send(data);
 }
 
-inline void buttonrpc::recv(zmq::message_t& data)
+inline void rxwRPC::recv(zmq::message_t& data)
 {
 	m_socket->recv(&data);
 }
 
-inline void buttonrpc::set_timeout(uint32_t ms)
+inline void rxwRPC::set_timeout(uint32_t ms)
 {
 	// only client can set
 	if (m_role == RPC_CLIENT) {
@@ -263,7 +263,7 @@ inline void buttonrpc::set_timeout(uint32_t ms)
 	}
 }
 
-inline void buttonrpc::run()
+inline void rxwRPC::run()
 {
 	// only server can call
 	if (m_role != RPC_SERVER) {
@@ -288,7 +288,7 @@ inline void buttonrpc::run()
 
 // 处理函数相关
 
-inline Serializer* buttonrpc::call_(std::string name, const char* data, int len)
+inline Serializer* rxwRPC::call_(std::string name, const char* data, int len)
 {
 	Serializer* ds = new Serializer();
 	if (m_handlers.find(name) == m_handlers.end()) {
@@ -304,32 +304,32 @@ inline Serializer* buttonrpc::call_(std::string name, const char* data, int len)
 
 //注册并绑定函数
 template<typename F>
-inline void buttonrpc::bind(std::string name, F func)
+inline void rxwRPC::bind(std::string name, F func)
 {
-	m_handlers[name] = std::bind(&buttonrpc::callproxy<F>, this, func, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+	m_handlers[name] = std::bind(&rxwRPC::callproxy<F>, this, func, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
 }
 
 //注册并绑定函数
 template<typename F, typename S>
-inline void buttonrpc::bind(std::string name, F func, S* s)
+inline void rxwRPC::bind(std::string name, F func, S* s)
 {
-	m_handlers[name] = std::bind(&buttonrpc::callproxy<F, S>, this, func, s, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+	m_handlers[name] = std::bind(&rxwRPC::callproxy<F, S>, this, func, s, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
 }
 
 template<typename F>
-inline void buttonrpc::callproxy(F fun, Serializer* pr, const char* data, int len)
+inline void rxwRPC::callproxy(F fun, Serializer* pr, const char* data, int len)
 {
 	callproxy_(fun, pr, data, len);
 }
 
 template<typename F, typename S>
-inline void buttonrpc::callproxy(F fun, S* s, Serializer* pr, const char* data, int len)
+inline void rxwRPC::callproxy(F fun, S* s, Serializer* pr, const char* data, int len)
 {
 	callproxy_(fun, s, pr, data, len);
 }
 
 template<typename R>
-inline buttonrpc::value_t<R> buttonrpc::net_call(Serializer& ds)
+inline rxwRPC::value_t<R> rxwRPC::net_call(Serializer& ds)
 {
 	//生成并发送请求
 	zmq::message_t request(ds.size() + 1);
