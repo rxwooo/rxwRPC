@@ -5,8 +5,8 @@
 #include <sstream>
 #include <functional>
 #include <memory>
-#include <zmq.hpp>
-#include "Serializer.hpp"
+#include "zmq.hpp"
+#include "Serializer.hpp"
 
 
 class Serializer;
@@ -22,8 +22,8 @@ struct type_xx<void> { typedef int8_t type; };
 template<typename Tuple, std::size_t... Is>
 void package_params_impl(Serializer& ds, const Tuple& t, std::index_sequence<Is...>)
 {
-	//initializer_list<int>{((ds << std::get<Is>(t)), 0)...};
-	((ds << std::get<Is>(t)), ...);
+	initializer_list<int>{((ds << std::get<Is>(t)), 0)...};
+	//((ds << std::get<Is>(t)), ...);
 }
 
 template<typename... Args>
@@ -36,7 +36,7 @@ void package_params(Serializer& ds, const std::tuple<Args...>& t)
 template<typename Function, typename Tuple, std::size_t... Index>
 decltype(auto) invoke_impl(Function&& func, Tuple&& t, std::index_sequence<Index...>)
 {
-	return func(std::get<Index>(std::forward<Tuple>(t))...); 
+	return func(std::get<Index>(std::forward<Tuple>(t))...);
 }
 
 template<typename Function, typename Tuple>
@@ -74,7 +74,7 @@ public:
 		RPC_ERR_RECV_TIMEOUT
 	};
 
-	// result package
+	// result 打包
 	template<typename T>
 	class value_t {
 	public:
@@ -281,6 +281,7 @@ inline void rxwRPC::run()
 
 		zmq::message_t retmsg(r->size());
 		memcpy(retmsg.data(), r->data(), r->size());
+		int size = retmsg.size();
 		send(retmsg);
 		delete r;
 	}
@@ -337,23 +338,23 @@ inline rxwRPC::value_t<R> rxwRPC::net_call(Serializer& ds)
 	if (m_error_code != RPC_ERR_RECV_TIMEOUT) {
 		send(request);
 	}
-
+	
 	//生成并接受返回
 	zmq::message_t reply;
 	recv(reply);
-	value_t<R> val;
+	value_t<R> res;
 	if (reply.size() == 0) {
 		// timeout
 		m_error_code = RPC_ERR_RECV_TIMEOUT;
-		val.set_code(RPC_ERR_RECV_TIMEOUT);
-		val.set_msg("recv timeout");
-		return val;
+		res.set_code(RPC_ERR_RECV_TIMEOUT);
+		res.set_msg("recv timeout");
+		return res;
 	}
 	m_error_code = RPC_ERR_SUCCESS;
 	ds.clear();
 	ds.write_raw_data((char*)reply.data(), reply.size());
 	ds.reset();
 
-	ds >> val;
-	return val;
+	ds >> res;
+	return res;
 }
