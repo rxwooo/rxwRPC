@@ -17,7 +17,6 @@ struct type_xx { typedef T type; };
 template<>
 struct type_xx<void> { typedef int8_t type; };
 
-
 // 打包帮助模板
 template<typename Tuple, std::size_t... Is>
 void package_params_impl(Serializer& ds, const Tuple& t, std::index_sequence<Is...>)

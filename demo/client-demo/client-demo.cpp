@@ -1,7 +1,7 @@
 #include <string>
 #include <iostream>
 #include <ctime>
-#include "../../include/rxwRPC.hpp"
+#include "rxwRPC.hpp"
 #include <Windows.h>
 
 #define buttont_assert(exp) { \
